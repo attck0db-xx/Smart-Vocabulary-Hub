@@ -88,7 +88,7 @@ const App: React.FC = () => {
         setInputText('');
       }
     } catch (err) {
-      setError("解析失败，请检查配置。");
+      setError("解析失败，请检查 API 状态。");
     } finally {
       setIsLoading(false);
     }
@@ -103,7 +103,7 @@ const App: React.FC = () => {
         await handleProcess(words);
       }
     } catch (err) {
-      setError("获取生活词汇失败。");
+      setError("获取高频词汇失败。");
       setIsLoading(false);
     }
   };
@@ -195,28 +195,28 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-[1400px] mx-auto px-8 py-12 md:py-20">
+      <div className="max-w-[1500px] mx-auto px-8 py-10 md:py-16">
         
-        <header className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 border-b border-slate-100 pb-12">
+        <header className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8 border-b border-slate-100 pb-10">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4">
               <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
-              Workspace
+              学习空间
             </div>
             <h1 className="text-5xl lg:text-6xl font-black text-slate-900 tracking-tight mb-3">欧大宝打卡神器</h1>
-            <p className="text-slate-400 font-bold text-lg tracking-tight">打造沉浸式英语学习环境 · 每日蜕变</p>
+            <p className="text-slate-400 font-bold text-lg tracking-tight">打造沉浸式英语学习环境 · 记录每日成长</p>
           </div>
           
           <nav className="flex flex-wrap gap-3">
             <button 
               onClick={() => { setViewMode(viewMode === 'review_words' ? 'normal' : 'review_words'); if (viewMode !== 'review_words') updateReviewStatus('words'); }}
-              className={`px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border ${viewMode === 'review_words' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}
+              className={`px-8 py-4 rounded-2xl text-[12px] font-black shadow-sm transition-all flex items-center gap-2 border ${viewMode === 'review_words' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}
             >
               单词复习
             </button>
             <button 
               onClick={() => { setViewMode(viewMode === 'review_dialogues' ? 'normal' : 'review_dialogues'); if (viewMode !== 'review_dialogues') updateReviewStatus('dialogues'); }}
-              className={`px-8 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm transition-all flex items-center gap-2 border ${viewMode === 'review_dialogues' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}
+              className={`px-8 py-4 rounded-2xl text-[12px] font-black shadow-sm transition-all flex items-center gap-2 border ${viewMode === 'review_dialogues' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-100 hover:border-slate-300'}`}
             >
               对话复习
             </button>
@@ -234,11 +234,11 @@ const App: React.FC = () => {
                   <div className="p-1 bg-slate-100 rounded">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" strokeWidth="3" strokeLinecap="round"/></svg>
                   </div>
-                  添加新词
+                  输入新内容
                 </h3>
                 <textarea
                   className="w-full h-48 p-6 border border-slate-50 rounded-[32px] focus:ring-8 focus:ring-blue-50/50 outline-none text-slate-700 font-bold resize-none bg-slate-50/30 transition-all placeholder:text-slate-300 text-base leading-relaxed"
-                  placeholder="粘贴新单词... (已学的会自动跳过)"
+                  placeholder="粘贴新单词或短语... (已学过的内容将自动去重)"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                 />
@@ -246,17 +246,17 @@ const App: React.FC = () => {
                   <button
                     onClick={() => handleProcess(inputText.split(/,|\n/).map(w => w.trim()).filter(w => w.length > 0))}
                     disabled={isLoading || !inputText.trim()}
-                    className="w-full bg-blue-600 text-white py-5 rounded-[24px] hover:bg-blue-700 transition-all disabled:opacity-50 font-black shadow-2xl shadow-blue-100 flex items-center justify-center gap-3 text-sm uppercase tracking-widest"
+                    className="w-full bg-blue-600 text-white py-5 rounded-[24px] hover:bg-blue-700 transition-all disabled:opacity-50 font-black shadow-2xl shadow-blue-100 flex items-center justify-center gap-3 text-sm"
                   >
                     {isLoading ? <span className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></span> : null}
-                    {isLoading ? 'Processing' : 'Add to Plan'}
+                    {isLoading ? '正在解析' : '加入学习计划'}
                   </button>
                   <div className="grid grid-cols-2 gap-4">
-                    <button onClick={handleFetchHighFreqWords} disabled={isLoading} className="py-4 rounded-[20px] border border-slate-100 bg-white text-slate-600 text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors disabled:opacity-50">
-                      High-Freq
+                    <button onClick={handleFetchHighFreqWords} disabled={isLoading} className="py-4 rounded-[20px] border border-slate-100 bg-white text-slate-600 text-[12px] font-black hover:bg-slate-50 transition-colors disabled:opacity-50">
+                      生活高频词
                     </button>
-                    <button onClick={handleGenerateDialogue} disabled={isLoading} className="py-4 rounded-[20px] border border-slate-100 bg-white text-slate-600 text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors disabled:opacity-50">
-                      Scenario
+                    <button onClick={handleGenerateDialogue} disabled={isLoading} className="py-4 rounded-[20px] border border-slate-100 bg-white text-slate-600 text-[12px] font-black hover:bg-slate-50 transition-colors disabled:opacity-50">
+                      随机场景
                     </button>
                   </div>
                 </div>
@@ -279,10 +279,10 @@ const App: React.FC = () => {
                   <button onClick={() => setCurrentDialogue(null)} className="absolute top-8 right-8 text-slate-300 hover:text-slate-500 transition-colors p-3 hover:bg-slate-50 rounded-full">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2.5"/></svg>
                   </button>
-                  <h2 className="text-3xl font-black text-slate-900 mb-4">场景对话：{currentDialogue.title}</h2>
-                  <p className="text-[11px] font-black text-blue-500 mb-12 flex items-center gap-3">
-                    <span className="p-1.5 bg-blue-50 rounded-lg">PRO TIP</span>
-                    <span>Double Click Any Word to Translate</span>
+                  <h2 className="text-3xl font-black text-slate-900 mb-4">当前场景：{currentDialogue.title}</h2>
+                  <p className="text-[12px] font-black text-blue-500 mb-12 flex items-center gap-3">
+                    <span className="p-1.5 bg-blue-50 rounded-lg">小技巧</span>
+                    <span>双击任意单词可即时翻译并朗读</span>
                   </p>
                   <div className="space-y-10">
                     {currentDialogue.lines.map((line, i) => (
@@ -306,12 +306,12 @@ const App: React.FC = () => {
               <div className="space-y-8">
                 <div className="flex justify-between items-center px-6">
                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.4em]">
-                    {selectedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })} 的学习历程
+                    {selectedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })} 学习记录
                   </h3>
                   {filteredRecords.length > 0 && (
-                    <button onClick={handleClearDay} className="text-[11px] text-slate-300 hover:text-red-500 flex items-center gap-2 transition-all font-black uppercase tracking-widest px-4 py-2 rounded-xl hover:bg-red-50">
+                    <button onClick={handleClearDay} className="text-[12px] text-slate-300 hover:text-red-500 flex items-center gap-2 transition-all font-black px-4 py-2 rounded-xl hover:bg-red-50">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      Clear
+                      清空当天
                     </button>
                   )}
                 </div>
@@ -324,7 +324,7 @@ const App: React.FC = () => {
                   </div>
                 ) : (
                   <div className="py-40 text-center text-slate-300 border-[3px] border-dashed border-slate-50 rounded-[60px] bg-white/40">
-                    <p className="text-lg font-bold tracking-tight">暂无数据 · 快去开启今日学习吧</p>
+                    <p className="text-lg font-bold tracking-tight">暂无数据 · 请在左侧添加单词开启今日之旅</p>
                   </div>
                 )}
               </div>
@@ -343,9 +343,9 @@ const App: React.FC = () => {
                   </div>
                   单词深度复习
                 </h2>
-                <p className="text-slate-400 text-lg mt-3 font-medium">看词识义 · 查缺补漏</p>
+                <p className="text-slate-400 text-lg mt-3 font-medium">看词识义 · 查缺补漏 · 精准记忆</p>
               </div>
-              <button onClick={() => setViewMode('normal')} className="px-8 py-4 rounded-2xl bg-white/10 text-white text-[11px] font-black uppercase tracking-widest hover:bg-white/20 transition-all relative z-10 border border-white/10">Exit Review</button>
+              <button onClick={() => setViewMode('normal')} className="px-8 py-4 rounded-2xl bg-white/10 text-white text-[12px] font-black hover:bg-white/20 transition-all relative z-10 border border-white/10">退出复习模式</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {records.map((record) => (
@@ -365,11 +365,11 @@ const App: React.FC = () => {
                   <div className="p-2 bg-emerald-500 rounded-2xl">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                   </div>
-                  情景对话温故
+                  情景对话复习
                 </h2>
-                <p className="text-emerald-200/60 text-lg mt-3 font-medium">结合场景 · 还原表达</p>
+                <p className="text-emerald-200/60 text-lg mt-3 font-medium">还原场景 · 结合语境 · 地道表达</p>
               </div>
-              <button onClick={() => setViewMode('normal')} className="px-8 py-4 rounded-2xl bg-white/10 text-white text-[11px] font-black uppercase tracking-widest hover:bg-white/20 transition-all relative z-10 border border-white/10">Exit Review</button>
+              <button onClick={() => setViewMode('normal')} className="px-8 py-4 rounded-2xl bg-white/10 text-white text-[12px] font-black hover:bg-white/20 transition-all relative z-10 border border-white/10">退出复习模式</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
               {savedDialogues.map((dlg) => (
@@ -398,9 +398,9 @@ const App: React.FC = () => {
                             ) : (
                               <button 
                                 onClick={() => toggleRevealDialogue(`${dlg.id}_${idx}`)}
-                                className="text-[11px] font-black text-emerald-600 hover:text-white transition-all bg-emerald-50 px-6 py-3 rounded-2xl border border-emerald-100 hover:bg-emerald-600 hover:border-emerald-600 shadow-sm uppercase tracking-widest"
+                                className="text-[12px] font-black text-emerald-600 hover:text-white transition-all bg-emerald-50 px-6 py-3 rounded-2xl border border-emerald-100 hover:bg-emerald-600 hover:border-emerald-600 shadow-sm uppercase tracking-widest"
                               >
-                                Show English
+                                显示英文原文
                               </button>
                             )}
                           </div>
@@ -410,16 +410,16 @@ const App: React.FC = () => {
                   </div>
                 </div>
               ))}
-              {savedDialogues.length === 0 && <div className="col-span-full py-40 text-center text-slate-300 bg-white rounded-[60px] border border-slate-100"><p className="text-xl font-light">还没有保存的对话呢。</p></div>}
+              {savedDialogues.length === 0 && <div className="col-span-full py-40 text-center text-slate-300 bg-white rounded-[60px] border border-slate-100"><p className="text-xl font-light">还没有保存的场景对话数据。</p></div>}
             </div>
           </div>
         )}
 
         <footer className="mt-40 py-20 text-center border-t border-slate-50">
           <div className="inline-block px-6 py-3 bg-slate-50 rounded-[20px] border border-slate-100 shadow-sm">
-            <p className="text-xs text-slate-400 font-black uppercase tracking-[0.6em]">欧大宝专属 · 极致高效工作区</p>
+            <p className="text-xs text-slate-400 font-black uppercase tracking-[0.6em]">欧大宝专属打卡神器 · 高效词汇工作流</p>
           </div>
-          <p className="mt-6 text-[11px] text-slate-300 font-bold uppercase tracking-widest">Powered by Gemini Flash 3 · Precision & Innovation</p>
+          <p className="mt-6 text-[11px] text-slate-300 font-bold uppercase tracking-widest">Power Your English Journey with Gemini AI</p>
         </footer>
       </div>
     </div>

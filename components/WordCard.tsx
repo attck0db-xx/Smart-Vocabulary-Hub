@@ -53,22 +53,22 @@ const WordCard: React.FC<WordCardProps> = ({ record, onPlay, onDelete, minimal =
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
             <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-50 group-hover:bg-white transition-colors group-hover:shadow-inner">
               <div className="flex items-start gap-4">
-                <p className="text-slate-800 font-medium text-lg md:text-xl leading-relaxed flex-1 italic">
-                  <span className="text-blue-200 text-2xl font-serif">“</span>
+                <p className="text-slate-800 font-medium text-lg md:text-2xl leading-relaxed flex-1 italic">
+                  <span className="text-blue-200 text-3xl font-serif">“</span>
                   {record.sentence}
-                  <span className="text-blue-200 text-2xl font-serif">”</span>
+                  <span className="text-blue-200 text-3xl font-serif">”</span>
                 </p>
                 <button 
                   onClick={() => onPlay(record.sentence)}
                   className="p-2 rounded-xl hover:bg-slate-100 text-slate-300 hover:text-blue-500 transition-all"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                   </svg>
                 </button>
               </div>
               <div className="mt-6 pt-5 border-t border-slate-100/50">
-                <p className="text-sm text-slate-400 font-bold tracking-tight">{record.sentenceTranslation}</p>
+                <p className="text-base text-slate-400 font-bold tracking-tight">{record.sentenceTranslation}</p>
               </div>
             </div>
           </div>
@@ -83,7 +83,7 @@ const WordCard: React.FC<WordCardProps> = ({ record, onPlay, onDelete, minimal =
                   onClick={() => setShowMeaning(false)}
                   className="mt-4 text-xs text-slate-400 hover:text-slate-600 font-bold uppercase tracking-widest block"
                  >
-                   Hide
+                   隐藏释义
                  </button>
               </div>
             ) : (
@@ -91,7 +91,7 @@ const WordCard: React.FC<WordCardProps> = ({ record, onPlay, onDelete, minimal =
                 onClick={() => setShowMeaning(true)}
                 className="w-full text-xs font-black text-blue-600 bg-blue-50 px-5 py-4 rounded-2xl hover:bg-blue-600 hover:text-white transition-all border border-blue-100/30 uppercase tracking-[0.2em] shadow-sm active:scale-95"
               >
-                Show Meaning
+                显示释义
               </button>
             )}
           </div>
