@@ -1,62 +1,148 @@
 
-import React from 'react';
-import { WordRecord } from '../types';
+import React, { useState } from 'react';
+import { WordRecord, Dialogue, ReviewStatus } from '../types';
 
 interface CalendarProps {
   records: WordRecord[];
+  dialogues: Dialogue[];
+  reviewStatus: ReviewStatus;
   selectedDate: Date;
   onSelectDate: (date: Date) => void;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ records, selectedDate, onSelectDate }) => {
-  const today = new Date();
-  
-  const days = Array.from({ length: 14 }).map((_, i) => {
-    const d = new Date();
-    d.setDate(today.getDate() - (13 - i));
-    return d;
-  });
+const Calendar: React.FC<CalendarProps> = ({ records, dialogues, reviewStatus, selectedDate, onSelectDate }) => {
+  const [viewDate, setViewDate] = useState(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
 
-  const getCountForDate = (date: Date) => {
-    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-    const endOfDay = startOfDay + 86400000;
-    return records.filter(r => r.timestamp >= startOfDay && r.timestamp < endOfDay).length;
+  const changeMonth = (offset: number) => {
+    setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + offset, 1));
   };
+
+  const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const daysCount = daysInMonth(year, month);
+  const firstDay = firstDayOfMonth(year, month);
 
   const isSameDay = (d1: Date, d2: Date) => 
     d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear();
 
+  const getStatsForDay = (day: number) => {
+    const d = new Date(year, month, day);
+    const startOfDay = d.getTime();
+    const endOfDay = startOfDay + 86400000;
+    const dayWords = records.filter(r => r.timestamp >= startOfDay && r.timestamp < endOfDay).length;
+    const dayDialogues = dialogues.filter(dlg => dlg.timestamp >= startOfDay && dlg.timestamp < endOfDay).length;
+    
+    const dateKey = `${year}-${month + 1}-${day}`;
+    const status = reviewStatus[dateKey] || { wordsReviewed: false, dialoguesReviewed: false };
+    const isReviewed = status.wordsReviewed && status.dialoguesReviewed;
+
+    return { dayWords, dayDialogues, isReviewed };
+  };
+
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
-    <div className="bg-white border border-slate-200 rounded-3xl p-5 mb-10 overflow-hidden shadow-sm">
-      <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
-        {days.map((day, idx) => {
-          const count = getCountForDate(day);
-          const isSelected = isSameDay(day, selectedDate);
-          const isToday = isSameDay(day, today);
-          
+    <div className="bg-white border border-slate-100 rounded-[40px] p-8 shadow-sm">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <h4 className="text-2xl font-black text-slate-900">
+            {viewDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+          </h4>
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Learning Activity</span>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => changeMonth(-1)} className="p-2.5 rounded-2xl hover:bg-slate-50 border border-slate-100 transition-all text-slate-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" strokeWidth="2.5"/></svg>
+          </button>
+          <button onClick={() => setViewDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1))} className="px-4 py-2.5 rounded-2xl bg-slate-50 text-[11px] font-black text-slate-600 hover:bg-slate-100 border border-slate-100 transition-all">Today</button>
+          <button onClick={() => changeMonth(1)} className="p-2.5 rounded-2xl hover:bg-slate-50 border border-slate-100 transition-all text-slate-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" strokeWidth="2.5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-7 gap-3">
+        {weekDays.map(wd => (
+          <div key={wd} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-widest py-2">
+            {wd}
+          </div>
+        ))}
+        {Array.from({ length: firstDay }).map((_, i) => (
+          <div key={`empty-${i}`} className="h-20 lg:h-24"></div>
+        ))}
+        {Array.from({ length: daysCount }).map((_, i) => {
+          const day = i + 1;
+          const { dayWords, dayDialogues, isReviewed } = getStatsForDay(day);
+          const currentDayDate = new Date(year, month, day);
+          const isSelected = isSameDay(currentDayDate, selectedDate);
+          const isToday = isSameDay(currentDayDate, new Date());
+
           return (
             <button
-              key={idx}
-              onClick={() => onSelectDate(day)}
-              className={`flex flex-col items-center justify-center min-w-[58px] py-4 rounded-2xl transition-all border shrink-0 ${
+              key={day}
+              onClick={() => onSelectDate(currentDayDate)}
+              className={`h-20 lg:h-24 p-2 rounded-3xl border transition-all flex flex-col relative group overflow-hidden ${
                 isSelected 
-                  ? 'bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200 scale-105' 
-                  : 'bg-white border-slate-50 hover:border-slate-200 text-slate-400'
+                  ? 'bg-slate-900 border-slate-900 text-white shadow-xl scale-105 z-10' 
+                  : isToday 
+                    ? 'bg-white border-blue-100 text-slate-900 hover:border-blue-400' 
+                    : 'bg-slate-50/20 border-slate-50 hover:bg-white hover:border-slate-200'
               }`}
             >
-              <span className={`text-[9px] uppercase font-black tracking-widest mb-1 ${isSelected ? 'text-slate-400' : 'text-slate-300'}`}>
-                {day.toLocaleDateString('en-US', { weekday: 'short' })}
+              <span className={`text-sm font-black mb-1 ${isSelected ? 'text-white' : isToday ? 'text-blue-500 underline decoration-2' : 'text-slate-700'}`}>
+                {day}
               </span>
-              <span className={`text-base font-black ${isSelected ? 'text-white' : isToday ? 'text-blue-500' : 'text-slate-700'}`}>
-                {day.getDate()}
-              </span>
-              <div className="mt-2 flex flex-col items-center gap-1">
-                <div className={`w-1.5 h-1.5 rounded-full ${count > 0 ? (isSelected ? 'bg-blue-400' : 'bg-blue-500') : (isSelected ? 'bg-slate-700' : 'bg-slate-100')}`}></div>
-                {count > 0 && <span className={`text-[9px] font-bold ${isSelected ? 'text-blue-300' : 'text-blue-500'}`}>{count}</span>}
+              
+              <div className="flex-1 flex flex-col gap-1 justify-center">
+                {dayWords > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-blue-400' : 'bg-blue-500'}`}></div>
+                    <span className={`text-[9px] font-bold ${isSelected ? 'text-blue-200' : 'text-slate-400'}`}>{dayWords}w</span>
+                  </div>
+                )}
+                {dayDialogues > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-emerald-500'}`}></div>
+                    <span className={`text-[9px] font-bold ${isSelected ? 'text-emerald-200' : 'text-slate-400'}`}>{dayDialogues}d</span>
+                  </div>
+                )}
               </div>
+
+              {isReviewed && (
+                <div className="absolute top-2 right-2">
+                  <div className={`p-0.5 rounded-full ${isSelected ? 'bg-blue-400' : 'bg-green-500'}`}>
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="4">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
             </button>
           );
         })}
+      </div>
+      
+      <div className="mt-8 flex gap-6 px-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Words Learned</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Dialogues Learned</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 bg-green-500 rounded-full flex items-center justify-center">
+            <svg className="w-1.5 h-1.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeWidth="4"/></svg>
+          </div>
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Review Completed</span>
+        </div>
       </div>
     </div>
   );

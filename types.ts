@@ -28,6 +28,13 @@ export interface WordLookup {
   translation: string;
 }
 
+export interface ReviewStatus {
+  [dateKey: string]: {
+    wordsReviewed: boolean;
+    dialoguesReviewed: boolean;
+  };
+}
+
 export interface StudyStats {
   todayCount: number;
   monthCount: number;
