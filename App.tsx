@@ -20,7 +20,6 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'normal' | 'review_words' | 'review_dialogues'>('normal');
   const [currentDialogue, setCurrentDialogue] = useState<Dialogue | null>(null);
   
-  // Word lookup state
   const [lookup, setLookup] = useState<{data: WordLookup, x: number, y: number} | null>(null);
   const [revealedDialogueIds, setRevealedDialogueIds] = useState<Set<string>>(new Set());
 
@@ -57,10 +56,20 @@ const App: React.FC = () => {
 
   const handleProcess = async (words: string[]) => {
     if (words.length === 0) return;
+    
+    // 逻辑优化：自动忽略已学习过的单词
+    const existingWords = new Set(records.map(r => r.word.toLowerCase()));
+    const uniqueWords = words.filter(w => !existingWords.has(w.toLowerCase()));
+    
+    if (uniqueWords.length === 0) {
+      setError("输入的所有单词都已在学习计划中，无需重复添加。");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      const data = await fetchWordData(words);
+      const data = await fetchWordData(uniqueWords);
       if (data && data.length > 0) {
         const newRecords: WordRecord[] = data.map(item => ({
           ...item,
@@ -69,9 +78,10 @@ const App: React.FC = () => {
         }));
         setRecords(prev => [...newRecords, ...prev]);
         setSelectedDate(new Date());
+        setInputText('');
       }
     } catch (err) {
-      setError("Failed to fetch word data.");
+      setError("解析失败，请检查网络或 API 配置。");
     } finally {
       setIsLoading(false);
     }
@@ -79,20 +89,21 @@ const App: React.FC = () => {
 
   const handleFetchHighFreqWords = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const words = await fetchHighFreqWords();
       if (words && words.length > 0) {
         await handleProcess(words);
       }
     } catch (err) {
-      setError("Failed to fetch words.");
-    } finally {
+      setError("获取生活词汇失败。");
       setIsLoading(false);
     }
   };
 
   const handleGenerateDialogue = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const d = await generateDialogue();
       if (d) {
@@ -100,7 +111,7 @@ const App: React.FC = () => {
         setSavedDialogues(prev => [d, ...prev]);
       }
     } catch (err) {
-      setError("Failed to generate dialogue.");
+      setError("生成对话失败。");
     } finally {
       setIsLoading(false);
     }
@@ -130,11 +141,7 @@ const App: React.FC = () => {
       
       const result = await lookupWord(cleanWord);
       if (result) {
-        setLookup({
-          data: result,
-          x: e.clientX,
-          y: e.clientY
-        });
+        setLookup({ data: result, x: e.clientX, y: e.clientY });
       }
     }
   };
@@ -153,40 +160,43 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12 md:py-20 bg-gray-50 min-h-screen relative" onClick={() => setLookup(null)}>
-      {/* Word Lookup Popup */}
+    <div className="max-w-2xl mx-auto px-4 py-12 md:py-20 bg-[#F9FAFB] min-h-screen relative font-sans text-slate-800" onClick={() => setLookup(null)}>
+      {/* Word Lookup Popup - Improved Glassmorphism */}
       {lookup && (
         <div 
-          className="fixed z-50 bg-white border border-gray-200 shadow-xl rounded-lg p-3 text-xs animate-in zoom-in-95"
-          style={{ top: lookup.y - 60, left: lookup.x }}
+          className="fixed z-50 bg-white/90 backdrop-blur-md border border-slate-200 shadow-2xl rounded-xl p-4 text-sm animate-in zoom-in-95 duration-200"
+          style={{ top: Math.min(window.innerHeight - 150, lookup.y - 100), left: Math.min(window.innerWidth - 200, lookup.x) }}
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-bold text-gray-900">{lookup.data.word}</span>
-            <span className="text-gray-400 font-mono">{lookup.data.phonetic}</span>
-            <button onClick={() => handlePlay(lookup.data.word)} className="text-blue-500 hover:text-blue-700">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5 6 9 2 9 2 15 6 15 11 19 11 5Z" strokeWidth="2"/></svg>
+          <div className="flex items-center gap-3 mb-2">
+            <span className="font-bold text-slate-900 text-base">{lookup.data.word}</span>
+            <span className="text-slate-400 font-mono text-xs px-2 py-0.5 bg-slate-100 rounded">{lookup.data.phonetic}</span>
+            <button onClick={() => handlePlay(lookup.data.word)} className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M11 5 6 9 2 9 2 15 6 15 11 19 11 5Z"/></svg>
             </button>
           </div>
-          <div className="text-gray-600 border-t border-gray-50 pt-1 mt-1">{lookup.data.translation}</div>
+          <div className="text-slate-600 border-t border-slate-100 pt-2">{lookup.data.translation}</div>
         </div>
       )}
 
-      <header className="mb-10 text-center">
-        <h1 className="text-3xl font-light text-gray-900 tracking-tight mb-2">欧大宝专属单词打卡神器</h1>
-        <p className="text-gray-500 font-light italic">Smart Vocabulary Hub</p>
+      <header className="mb-12 text-center">
+        <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">Dashboard</div>
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">欧大宝专属单词打卡神器</h1>
+        <p className="text-slate-400 font-light italic">Smart Vocabulary Hub & Daily Companion</p>
       </header>
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-8 justify-center">
         <button 
           onClick={() => setViewMode(viewMode === 'review_words' ? 'normal' : 'review_words')}
-          className={`px-4 py-2 rounded-full border text-xs transition-all ${viewMode === 'review_words' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`}
+          className={`px-5 py-2.5 rounded-full border text-xs font-semibold shadow-sm transition-all flex items-center gap-2 ${viewMode === 'review_words' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}`}
         >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
           {viewMode === 'review_words' ? '退出单词复习' : '单词复习'}
         </button>
         <button 
           onClick={() => setViewMode(viewMode === 'review_dialogues' ? 'normal' : 'review_dialogues')}
-          className={`px-4 py-2 rounded-full border text-xs transition-all ${viewMode === 'review_dialogues' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400'}`}
+          className={`px-5 py-2.5 rounded-full border text-xs font-semibold shadow-sm transition-all flex items-center gap-2 ${viewMode === 'review_dialogues' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}`}
         >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
           {viewMode === 'review_dialogues' ? '退出对话复习' : '对话复习'}
         </button>
         {viewMode === 'normal' && (
@@ -194,14 +204,14 @@ const App: React.FC = () => {
             <button 
               onClick={handleFetchHighFreqWords}
               disabled={isLoading}
-              className="px-4 py-2 rounded-full border bg-white text-gray-600 border-gray-200 hover:border-blue-400 text-xs transition-all disabled:opacity-50"
+              className="px-5 py-2.5 rounded-full border bg-white text-slate-600 border-slate-200 hover:border-blue-400 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
             >
               生活常用词 (30)
             </button>
             <button 
               onClick={handleGenerateDialogue}
               disabled={isLoading}
-              className="px-4 py-2 rounded-full border bg-white text-gray-600 border-gray-200 hover:border-blue-400 text-xs transition-all disabled:opacity-50"
+              className="px-5 py-2.5 rounded-full border bg-white text-slate-600 border-slate-200 hover:border-blue-400 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
             >
               生活场景对话
             </button>
@@ -214,48 +224,57 @@ const App: React.FC = () => {
           <Dashboard stats={stats} />
           <Calendar records={records} selectedDate={selectedDate} onSelectDate={setSelectedDate} />
           
-          <section className="bg-white border border-gray-200 rounded-lg p-6 mb-8 shadow-sm">
+          <section className="bg-white border border-slate-200 rounded-2xl p-6 mb-10 shadow-sm transition-shadow hover:shadow-md">
             <textarea
-              className="w-full h-24 p-4 border border-gray-100 rounded-md focus:ring-1 focus:ring-blue-500 outline-none text-gray-700 font-light resize-none bg-gray-50"
-              placeholder="粘贴单词，逗号或换行分隔..."
+              className="w-full h-28 p-4 border border-slate-100 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none text-slate-700 font-light resize-none bg-slate-50/50 transition-all placeholder:text-slate-300"
+              placeholder="粘贴新单词，逗号或换行分隔... (已学过的单词将自动跳过)"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
             />
-            <div className="mt-4 flex justify-end">
+            <div className="mt-4 flex justify-between items-center">
+              <span className="text-[10px] text-slate-400">已自动过滤重复内容</span>
               <button
-                onClick={handleProcess.bind(null, inputText.split(/,|\n/).map(w => w.trim()).filter(w => w.length > 0))}
+                onClick={() => handleProcess(inputText.split(/,|\n/).map(w => w.trim()).filter(w => w.length > 0))}
                 disabled={isLoading || !inputText.trim()}
-                className="bg-blue-600 text-white px-8 py-2 rounded-md hover:bg-blue-700 transition-all disabled:opacity-50 font-medium"
+                className="bg-blue-600 text-white px-8 py-2.5 rounded-xl hover:bg-blue-700 transition-all disabled:opacity-50 font-bold shadow-lg shadow-blue-200"
               >
-                {isLoading ? '解析中...' : '解析单词'}
+                {isLoading ? '解析中...' : '开始学习'}
               </button>
             </div>
-            {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+            {error && <p className="mt-3 text-xs text-red-500 bg-red-50 p-2 rounded-lg border border-red-100">{error}</p>}
           </section>
 
           {currentDialogue && (
             <div 
-              className="bg-white border border-blue-100 rounded-lg p-6 mb-8 shadow-sm relative animate-in slide-in-from-top-4 duration-500"
+              className="bg-white border border-blue-100 rounded-2xl p-7 mb-10 shadow-xl shadow-blue-50 relative animate-in slide-in-from-top-4 duration-500 overflow-hidden"
               onDoubleClick={handleWordDoubleClick}
             >
-              <button onClick={() => setCurrentDialogue(null)} className="absolute top-2 right-2 text-gray-300 hover:text-gray-500 text-xl">×</button>
-              <h2 className="text-lg font-semibold text-blue-600 mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-                新生成：{currentDialogue.title}
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+              <button onClick={() => setCurrentDialogue(null)} className="absolute top-3 right-3 text-slate-300 hover:text-slate-500 transition-colors p-1">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2"/></svg>
+              </button>
+              <h2 className="text-xl font-bold text-slate-900 mb-5 flex items-center gap-3">
+                <span className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                </span>
+                场景：{currentDialogue.title}
               </h2>
-              <p className="text-[10px] text-blue-400 mb-4 bg-blue-50 py-1 px-2 rounded w-fit">双击单词可即时翻译朗读</p>
-              <div className="space-y-4">
+              <p className="text-[11px] font-medium text-blue-500 mb-6 flex items-center gap-1.5">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                提示：双击单词即时翻译
+              </p>
+              <div className="space-y-6">
                 {currentDialogue.lines.map((line, i) => (
-                  <div key={i} className="flex gap-4 group">
-                    <span className="font-bold text-[10px] text-gray-300 w-4 pt-1.5 shrink-0">{line.speaker}</span>
+                  <div key={i} className="flex gap-5 group">
+                    <span className="font-black text-xs text-slate-200 w-4 pt-1 shrink-0 group-hover:text-blue-200 transition-colors">{line.speaker}</span>
                     <div className="flex-1">
-                      <div className="flex items-start gap-2">
-                        <p className="text-gray-800 text-sm leading-relaxed flex-1 select-text">{line.text}</p>
-                        <button onClick={() => handlePlay(line.text)} className="text-gray-300 hover:text-blue-500 shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5 6 9 2 9 2 15 6 15 11 19 11 5Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <div className="flex items-start gap-3">
+                        <p className="text-slate-800 text-base leading-relaxed flex-1 select-text font-medium">{line.text}</p>
+                        <button onClick={() => handlePlay(line.text)} className="text-slate-300 hover:text-blue-500 shrink-0 p-1 rounded-full hover:bg-slate-50 transition-all">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M11 5 6 9 2 9 2 15 6 15 11 19 11 5Z"/></svg>
                         </button>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">{line.translation}</p>
+                      <p className="text-sm text-slate-400 mt-2 font-light">{line.translation}</p>
                     </div>
                   </div>
                 ))}
@@ -263,80 +282,88 @@ const App: React.FC = () => {
             </div>
           )}
 
-          <div className="space-y-0">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                {selectedDate.toLocaleDateString()} 记录
+          <div className="space-y-4">
+            <div className="flex justify-between items-center px-2">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">
+                {selectedDate.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
               </h3>
               {filteredRecords.length > 0 && (
-                <button onClick={handleClearDay} className="text-xs text-red-400 hover:text-red-600 flex items-center gap-1 transition-colors">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <button onClick={handleClearDay} className="text-xs text-slate-400 hover:text-red-500 flex items-center gap-1.5 transition-colors font-medium">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                   清空当日
                 </button>
               )}
             </div>
-            {filteredRecords.length > 0 ? (
-              filteredRecords.map((record) => (
-                <WordCard key={record.id} record={record} onPlay={handlePlay} onDelete={(id) => setRecords(prev => prev.filter(r => r.id !== id))} />
-              ))
-            ) : (
-              <div className="py-20 text-center text-gray-300 border border-dashed border-gray-200 rounded-lg">
-                <p>当日无记录</p>
-              </div>
-            )}
+            <div className="space-y-3">
+              {filteredRecords.length > 0 ? (
+                filteredRecords.map((record) => (
+                  <WordCard key={record.id} record={record} onPlay={handlePlay} onDelete={(id) => setRecords(prev => prev.filter(r => r.id !== id))} />
+                ))
+              ) : (
+                <div className="py-24 text-center text-slate-300 border-2 border-dashed border-slate-100 rounded-3xl bg-white/50">
+                  <p className="text-sm font-light">今日尚无单词记录，快去学习吧！</p>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
 
       {viewMode === 'review_words' && (
-        <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-            <h2 className="text-blue-800 font-medium">单词复习模式</h2>
-            <p className="text-blue-600 text-[10px] mt-1">掌握后点击 × 移除。</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2"/></svg>
+              单词自主复习
+            </h2>
+            <p className="text-slate-400 text-xs mt-2">点击 "Show" 查阅翻译，掌握后点击右上角删除键移出词库。</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {records.map((record) => (
               <WordCard key={record.id} record={record} onPlay={handlePlay} onDelete={(id) => setRecords(prev => prev.filter(r => r.id !== id))} minimal={true} />
             ))}
           </div>
-          {records.length === 0 && <div className="py-20 text-center text-gray-300"><p>词库已清空。</p></div>}
+          {records.length === 0 && <div className="py-20 text-center text-slate-300 bg-white rounded-3xl border border-slate-100"><p>词库已清空，太棒了！</p></div>}
         </div>
       )}
 
       {viewMode === 'review_dialogues' && (
-        <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-          <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-            <h2 className="text-green-800 font-medium">对话复习模式</h2>
-            <p className="text-green-600 text-[10px] mt-1">显示中文翻译，点击 Show 查阅原文。点击右上角 × 永久删除。</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <div className="bg-emerald-900 text-white p-6 rounded-2xl shadow-xl">
+            <h2 className="text-lg font-bold flex items-center gap-2">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" strokeWidth="2"/></svg>
+              对话深度复习
+            </h2>
+            <p className="text-emerald-200/60 text-xs mt-2 font-light">看着中文想英文，点击 "Show English" 验证成果。</p>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-8">
             {savedDialogues.map((dlg) => (
-              <div key={dlg.id} className="bg-white border border-gray-200 rounded-lg p-6 relative shadow-sm group">
-                <button onClick={() => handleDeleteDialogue(dlg.id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              <div key={dlg.id} className="bg-white border border-slate-200 rounded-2xl p-8 relative shadow-sm group hover:border-emerald-200 transition-all">
+                <button onClick={() => handleDeleteDialogue(dlg.id)} className="absolute top-5 right-5 text-slate-300 hover:text-red-500 transition-all p-1 hover:bg-red-50 rounded-full">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2"/></svg>
                 </button>
-                <h3 className="text-lg font-medium text-gray-800 mb-6 pr-8">{dlg.title}</h3>
-                <div className="space-y-6">
+                <h3 className="text-xl font-bold text-slate-800 mb-8 pr-10">{dlg.title}</h3>
+                <div className="space-y-8">
                   {dlg.lines.map((line, idx) => {
                     const isRevealed = revealedDialogueIds.has(`${dlg.id}_${idx}`);
                     return (
-                      <div key={idx} className="flex gap-4">
-                        <span className="font-bold text-[10px] text-gray-300 w-4 pt-1 shrink-0">{line.speaker}</span>
+                      <div key={idx} className="flex gap-5 border-l-2 border-slate-50 pl-5 hover:border-emerald-100 transition-all">
+                        <span className="font-black text-xs text-slate-200 w-4 pt-1 shrink-0">{line.speaker}</span>
                         <div className="flex-1">
-                          <p className="text-gray-500 italic text-sm mb-2">"{line.translation}"</p>
+                          <p className="text-slate-500 italic text-base mb-3 leading-relaxed">"{line.translation}"</p>
                           {isRevealed ? (
-                            <div className="bg-gray-50 p-3 rounded-md animate-in fade-in duration-500">
-                              <div className="flex items-start gap-2">
-                                <p className="text-gray-900 text-sm leading-relaxed flex-1 font-medium">{line.text}</p>
-                                <button onClick={() => handlePlay(line.text)} className="text-blue-500 hover:text-blue-700">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5 6 9 2 9 2 15 6 15 11 19 11 5Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            <div className="bg-slate-50 p-4 rounded-xl animate-in slide-in-from-left-2 duration-300 border border-slate-100">
+                              <div className="flex items-start gap-3">
+                                <p className="text-slate-900 text-base leading-relaxed flex-1 font-semibold">{line.text}</p>
+                                <button onClick={() => handlePlay(line.text)} className="text-blue-500 hover:text-blue-700 p-1 bg-white rounded-full shadow-sm border border-slate-100">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path d="M11 5 6 9 2 9 2 15 6 15 11 19 11 5Z"/></svg>
                                 </button>
                               </div>
                             </div>
                           ) : (
                             <button 
                               onClick={() => toggleRevealDialogue(`${dlg.id}_${idx}`)}
-                              className="text-xs font-semibold text-blue-500 hover:text-blue-700 flex items-center gap-1"
+                              className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1.5 transition-all bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100"
                             >
                               Show English
                             </button>
@@ -348,13 +375,13 @@ const App: React.FC = () => {
                 </div>
               </div>
             ))}
-            {savedDialogues.length === 0 && <div className="py-20 text-center text-gray-300"><p>尚无保存的对话。</p></div>}
+            {savedDialogues.length === 0 && <div className="py-24 text-center text-slate-300 bg-white rounded-3xl border border-slate-100"><p>尚无保存的对话数据。</p></div>}
           </div>
         </div>
       )}
 
-      <footer className="mt-20 py-10 text-center border-t border-gray-100">
-        <p className="text-[10px] text-gray-300 uppercase tracking-widest">Minimalist Language Tool • Powered by Gemini Flash</p>
+      <footer className="mt-24 py-12 text-center border-t border-slate-100">
+        <p className="text-[10px] text-slate-300 uppercase tracking-[0.4em] font-black">Minimalist Language Tool • Powered by Gemini Flash 3</p>
       </footer>
     </div>
   );

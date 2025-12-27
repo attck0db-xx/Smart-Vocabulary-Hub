@@ -8,19 +8,21 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-2 gap-4 mb-8">
-      <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Today's Progress</p>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">{stats.todayCount}</span>
-          <span className="text-sm text-gray-500">words</span>
+    <div className="grid grid-cols-2 gap-5 mb-10">
+      <div className="bg-white p-7 border border-slate-200 rounded-3xl shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 relative z-10">Today's Progress</p>
+        <div className="flex items-baseline gap-2 relative z-10">
+          <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.todayCount}</span>
+          <span className="text-xs font-bold text-slate-400">words</span>
         </div>
       </div>
-      <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Monthly Total</p>
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">{stats.monthCount}</span>
-          <span className="text-sm text-gray-500">words</span>
+      <div className="bg-white p-7 border border-slate-200 rounded-3xl shadow-sm relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 relative z-10">Monthly Total</p>
+        <div className="flex items-baseline gap-2 relative z-10">
+          <span className="text-4xl font-black text-slate-900 tracking-tighter">{stats.monthCount}</span>
+          <span className="text-xs font-bold text-slate-400">words</span>
         </div>
       </div>
     </div>
