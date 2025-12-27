@@ -1,0 +1,5 @@
+{
+  "name": "欧大宝专属单词打卡神器",
+  "description": "A minimalist, Google Dictionary-style vocabulary learning dashboard that generates phonetic symbols and example sentences using Gemini AI, tracks study progress, and features text-to-speech pronunciation.",
+  "requestFramePermissions": []
+}
